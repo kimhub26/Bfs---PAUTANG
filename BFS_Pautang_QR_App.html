@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>BFS Pautang QR</title>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#17202a}
+.wrap{max-width:560px;margin:auto;padding:16px}.card{background:white;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 3px 14px #00000012}
+h1{margin:0 0 4px;font-size:25px}h2{font-size:18px;margin:0 0 12px}.muted{color:#667085;font-size:13px}
+input,select,button{width:100%;height:48px;border-radius:12px;border:1px solid #d0d5dd;padding:0 13px;font-size:16px;margin-top:8px}
+button{background:#1677ff;color:white;border:0;font-weight:700}.secondary{background:#eef2f6;color:#17202a}.danger{background:#d92d20}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}.tab{background:#e9edf2;color:#344054}.tab.active{background:#1677ff;color:#fff}
+.big{font-size:30px;font-weight:800;margin:5px 0}.status{padding:10px;border-radius:10px;background:#f2f4f7;margin-top:10px}
+#reader{width:100%;margin-top:10px;display:none}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px 4px;border-bottom:1px solid #eee;text-align:left}
+.badge{display:inline-block;padding:4px 8px;border-radius:20px;background:#eef2ff}.positive{color:#b42318}.zero{color:#027a48}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>🍽️ BFS Pautang</h1>
+    <div class="muted">Scan QR or type ID • Utang / Bayad • Automatic balance</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="txTab" onclick="show('tx')">TRANSACTION</button>
+    <button class="tab" id="regTab" onclick="show('reg')">REGISTER</button>
+  </div>
+
+  <section id="tx" class="card">
+    <h2>Scan / Type ID</h2>
+    <button onclick="startScan('tx')" class="secondary">📷 SCAN QR</button>
+    <div id="readerTx"></div>
+    <input id="txId" placeholder="Type ID if no QR" oninput="lookupTx()">
+    <div id="txPerson" class="status">No customer selected.</div>
+    <select id="txType"><option value="UTANG">UTANG</option><option value="BAYAD">BAYAD</option></select>
+    <input id="txAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Amount (₱)">
+    <input id="txRef" placeholder="Item / reference (optional)">
+    <button onclick="saveTx()">💾 SAVE TRANSACTION</button>
+    <div id="txMsg" class="status hidden"></div>
+  </section>
+
+  <section id="reg" class="card hidden">
+    <h2>Register Employee / Customer</h2>
+    <div class="muted">Later, scan their existing company QR here. We save the exact QR text as their ID.</div>
+    <button onclick="startScan('reg')" class="secondary">📷 SCAN QR TO REGISTER</button>
+    <div id="readerReg"></div>
+    <input id="regId" placeholder="QR result / ID">
+    <input id="regName" placeholder="Full name">
+    <input id="regDept" placeholder="Department / group (optional)">
+    <button onclick="savePerson()">➕ SAVE PERSON</button>
+    <div id="regMsg" class="status hidden"></div>
+  </section>
+
+  <section class="card">
+    <h2>Outstanding Balances</h2>
+    <div id="balances"></div>
+  </section>
+
+  <section class="card">
+    <h2>Recent Transactions</h2>
+    <div id="history"></div>
+  </section>
+
+  <section class="card">
+    <h2>Backup</h2>
+    <div class="row">
+      <button class="secondary" onclick="exportData()">Export CSV</button>
+      <button class="secondary" onclick="clearDemo()">Clear all</button>
+    </div>
+    <p class="muted">Data is stored on this device/browser. Export regularly while testing.</p>
+  </section>
+</div>
+
+<script>
+let people=JSON.parse(localStorage.getItem('bfs_people')||'{}');
+let txs=JSON.parse(localStorage.getItem('bfs_txs')||'[]');
+let scanner=null, activeReader=null;
+
+function save(){localStorage.setItem('bfs_people',JSON.stringify(people));localStorage.setItem('bfs_txs',JSON.stringify(txs));render();}
+function show(which){
+  document.getElementById('tx').classList.toggle('hidden',which!=='tx');
+  document.getElementById('reg').classList.toggle('hidden',which!=='reg');
+  document.getElementById('txTab').classList.toggle('active',which==='tx');
+  document.getElementById('regTab').classList.toggle('active',which==='reg');
+}
+function balance(id){
+  return txs.filter(t=>t.id===id).reduce((s,t)=>s+(t.type==='UTANG'?t.amount:-t.amount),0);
+}
+function lookupTx(){
+  const id=document.getElementById('txId').value.trim();
+  const p=people[id], el=document.getElementById('txPerson');
+  if(p){el.innerHTML='<b>'+esc(p.name)+'</b><br><span class="muted">'+esc(id)+(p.dept?' • '+esc(p.dept):'')+'</span><div class="big">₱'+balance(id).toFixed(2)+'</div><span class="muted">Current balance</span>';}
+  else el.textContent=id?'ID not registered yet. Register first.':'No customer selected.';
+}
+function scanSuccess(text){
+  if(activeReader==='reg'){document.getElementById('regId').value=text; msg('regMsg','QR captured. Enter the name then SAVE.');}
+  else {document.getElementById('txId').value=text; lookupTx();}
+  stopScan();
+}
+function startScan(target){
+  activeReader=target;
+  const id=target==='reg'?'readerReg':'readerTx';
+  const box=document.getElementById(id); box.style.display='block';
+  if(scanner) stopScan();
+  scanner=new Html5Qrcode(id);
+  scanner.start({facingMode:"environment"},{fps:10,qrbox:{width:240,height:240}},
+    scanSuccess,()=>{}).catch(e=>{alert('Camera could not start. Check browser camera permission. You can still TYPE the ID.');box.style.display='none';});
+}
+function stopScan(){
+  if(scanner){scanner.stop().catch(()=>{});scanner.clear().catch(()=>{});scanner=null;}
+  ['readerTx','readerReg'].forEach(x=>document.getElementById(x).style.display='none');
+}
+function savePerson(){
+  const id=document.getElementById('regId').value.trim(), name=document.getElementById('regName').value.trim(), dept=document.getElementById('regDept').value.trim();
+  if(!id||!name)return msg('regMsg','Please enter/scan the QR ID and name.');
+  people[id]={name,dept}; save(); msg('regMsg','Registered: '+name+' ('+id+')'); document.getElementById('regName').value='';document.getElementById('regDept').value='';lookupTx();
+}
+function saveTx(){
+  const id=document.getElementById('txId').value.trim(), type=document.getElementById('txType').value, amount=parseFloat(document.getElementById('txAmount').value), ref=document.getElementById('txRef').value.trim();
+  if(!people[id])return msg('txMsg','ID is not registered. Register the person first.');
+  if(!amount||amount<=0)return msg('txMsg','Enter a valid amount.');
+  if(type==='BAYAD' && amount>balance(id))return msg('txMsg','Payment is greater than the current balance.');
+  txs.push({date:new Date().toISOString(),id,type,amount,ref}); save();
+  document.getElementById('txAmount').value='';document.getElementById('txRef').value='';lookupTx();
+  msg('txMsg','Saved! New balance: ₱'+balance(id).toFixed(2));
+}
+function msg(id,t){const e=document.getElementById(id);e.textContent=t;e.classList.remove('hidden');setTimeout(()=>e.classList.add('hidden'),3500);}
+function render(){
+  const b=document.getElementById('balances');
+  const rows=Object.keys(people).map(id=>({id,p:people[id],bal:balance(id)})).filter(x=>x.bal>0).sort((a,b)=>b.bal-a.bal);
+  b.innerHTML=rows.length?'<table><tr><th>Name</th><th>Balance</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.p.name)+'<br><span class="muted">'+esc(x.id)+'</span></td><td class="positive"><b>₱'+x.bal.toFixed(2)+'</b></td></tr>').join('')+'</table>':'<div class="status">No outstanding balance.</div>';
+  const h=document.getElementById('history'), recent=txs.slice().reverse().slice(0,30);
+  h.innerHTML=recent.length?'<table><tr><th>Date</th><th>Name</th><th>Type</th><th>Amount</th></tr>'+recent.map(t=>'<tr><td>'+new Date(t.date).toLocaleString()+'</td><td>'+esc(people[t.id]?.name||t.id)+'</td><td>'+t.type+'</td><td>₱'+t.amount.toFixed(2)+'</td></tr>').join('')+'</table>':'<div class="status">No transactions yet.</div>';
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function exportData(){
+  let csv='Date,ID,Name,Type,Amount,Reference,Balance After\\n';
+  txs.forEach(t=>csv+=`"${t.date}","${t.id}","${people[t.id]?.name||''}","${t.type}",${t.amount},"${(t.ref||'').replace(/"/g,'""')}",${balanceAt(t.id,t.date).toFixed(2)}\\n`);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='BFS_Pautang_Backup.csv';a.click();
+}
+function balanceAt(id,date){let s=0;txs.filter(t=>t.id===id&&t.date<=date).forEach(t=>s+=(t.type==='UTANG'?t.amount:-t.amount));return s;}
+function clearDemo(){if(confirm('Delete ALL local data on this device?')){localStorage.removeItem('bfs_people');localStorage.removeItem('bfs_txs');people={};txs=[];render();}}
+render();
+</script>
+</body>
+</html>
