@@ -339,7 +339,14 @@ hr{
 </div>
 
 <script>
+const SUPABASE_URL = 'https://fjydbcklkxxjtfysadwn.supabase.co';
 
+const SUPABASE_KEY = 'sb_publishable_RXE_DD2_6OoViA73WLzMpQ_eFMPzRHV';
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 let people =
   JSON.parse(localStorage.getItem('bfs_people') || '{}');
 
