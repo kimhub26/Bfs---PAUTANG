@@ -347,6 +347,17 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+  supabaseClient
+  .from('bfs_data')
+  .select('id')
+  .limit(1)
+  .then(({ error }) => {
+    if (error) {
+      console.error('Supabase connection failed:', error);
+    } else {
+      console.log('SUPABASE CONNECTED ✅');
+    }
+  });
 let people =
   JSON.parse(localStorage.getItem('bfs_people') || '{}');
 
