@@ -865,33 +865,23 @@ function renderDashboard(){
   if(outstanding < 0)
     outstanding = 0;
 
-  Object.values(people).forEach(p => {
 
-    let personUtang = 0;
-    let personBayad = 0;
+  /* CUSTOMER COUNTS */
 
-    txs.forEach(t => {
+  Object.keys(people).forEach(id => {
 
-      if(t.id === p.id){
+    const bal = balance(id);
 
-        if(t.type === 'UTANG')
-          personUtang += Number(t.amount) || 0;
-
-        if(t.type === 'BAYAD')
-          personBayad += Number(t.amount) || 0;
-
-      }
-
-    });
-
-    let balance = personUtang - personBayad;
-
-    if(balance > 0)
+    if(bal > 0){
       customersWithDebt++;
-    else
+    }else{
       fullyPaid++;
+    }
 
   });
+
+
+  /* EXISTING DASHBOARD */
 
   document.getElementById('totalUtang')
     .textContent = '₱' + utang.toFixed(2);
@@ -902,28 +892,36 @@ function renderDashboard(){
   document.getElementById('totalOutstanding')
     .textContent = '₱' + outstanding.toFixed(2);
 
-  const totalCustomers = Object.keys(people).length;
 
-  const el = id => document.getElementById(id);
+  /* NEW DASHBOARD */
+
+  const totalCustomers =
+    Object.keys(people).length;
+
+  const el = id =>
+    document.getElementById(id);
 
   if(el('totalCustomers'))
-    el('totalCustomers').textContent = totalCustomers;
+    el('totalCustomers').textContent =
+      totalCustomers;
 
   if(el('customersWithDebt'))
-    el('customersWithDebt').textContent = customersWithDebt;
+    el('customersWithDebt').textContent =
+      customersWithDebt;
 
   if(el('fullyPaid'))
-    el('fullyPaid').textContent = fullyPaid;
+    el('fullyPaid').textContent =
+      fullyPaid;
 
   if(el('todayUtang'))
-    el('todayUtang').textContent = '₱' + todayUtang.toFixed(2);
+    el('todayUtang').textContent =
+      '₱' + todayUtang.toFixed(2);
 
   if(el('todayBayad'))
-    el('todayBayad').textContent = '₱' + todayBayad.toFixed(2);
+    el('todayBayad').textContent =
+      '₱' + todayBayad.toFixed(2);
 
 }
-
-
 /* =========================
    BALANCES
 ========================= */
