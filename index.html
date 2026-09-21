@@ -172,18 +172,24 @@ hr{
       <div class="num zero" id="totalBayad">₱0.00</div>
     </div>
 
-    <div class="stat">
-      <div class="muted">Customers</div>
+    <div class="stat"
+         onclick="dashboardFilter('all')"
+         style="cursor:pointer">
+      <div class="muted">👥 Customers</div>
       <div class="num" id="totalCustomers">0</div>
     </div>
 
-    <div class="stat">
-      <div class="muted">May Utang</div>
+    <div class="stat"
+         onclick="dashboardFilter('utang')"
+         style="cursor:pointer">
+      <div class="muted">🔴 May Utang</div>
       <div class="num" id="customersWithDebt">0</div>
     </div>
 
-    <div class="stat">
-      <div class="muted">Fully Paid</div>
+    <div class="stat"
+         onclick="dashboardFilter('paid')"
+         style="cursor:pointer">
+      <div class="muted">🟢 Fully Paid</div>
       <div class="num" id="fullyPaid">0</div>
     </div>
 
@@ -199,7 +205,6 @@ hr{
 
   </div>
 </section>
-
 <div class="tabs">
   <button class="tab active" id="txTab" onclick="show('tx')">TRANSACTION</button>
   <button class="tab" id="peopleTab" onclick="show('people')">CUSTOMERS</button>
@@ -617,7 +622,97 @@ function saveTx(){
    CUSTOMER LIST
 ========================= */
 
-function renderPeople(){
+function dashboardFilter(type){
+
+  show('people');
+
+  const searchBox =
+    document.getElementById('searchPerson');
+
+  if(searchBox)
+    searchBox.value = '';
+
+  const box =
+    document.getElementById('peopleList');
+
+  let list =
+    Object.keys(people)
+      .map(id => ({
+        id: id,
+        p: people[id],
+        bal: balance(id)
+      }));
+
+  if(type === 'utang'){
+
+    list = list.filter(x =>
+      x.bal > 0
+    );
+
+  }
+
+  if(type === 'paid'){
+
+    list = list.filter(x =>
+      x.bal <= 0
+    );
+
+  }
+
+  if(!list.length){
+
+    box.innerHTML =
+      '<div class="status">No customer found.</div>';
+
+    return;
+  }
+
+  box.innerHTML =
+    list.map(x => {
+
+      const status =
+        getStatus(x.id);
+
+      return `
+        <div class="person">
+
+          <b>${esc(x.p.name)}</b><br>
+
+          <span class="muted">
+            ID: ${esc(x.id)}
+            ${x.p.dept
+              ? ' • ' + esc(x.p.dept)
+              : ''}
+          </span>
+
+          <div class="big">
+            ₱${x.bal.toFixed(2)}
+          </div>
+
+          ${badge(status)}
+
+          <div class="row">
+
+            <button
+              class="secondary smallbtn"
+              onclick="viewPerson('${encodeURIComponent(x.id)}')">
+              HISTORY
+            </button>
+
+            <button
+              class="smallbtn"
+              onclick="usePerson('${encodeURIComponent(x.id)}')">
+              TRANSACTION
+            </button>
+
+          </div>
+
+        </div>
+      `;
+
+    }).join('');
+}
+  function renderPeople(){
 
   const box =
     document.getElementById('peopleList');
