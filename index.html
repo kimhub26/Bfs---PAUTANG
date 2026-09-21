@@ -154,19 +154,49 @@ hr{
 <!-- DASHBOARD -->
 <section class="card">
   <h2>📊 Dashboard</h2>
+
   <div class="stats">
+
     <div class="stat">
       <div class="muted">Outstanding</div>
       <div class="num positive" id="totalOutstanding">₱0.00</div>
     </div>
+
     <div class="stat">
       <div class="muted">Total Utang</div>
       <div class="num" id="totalUtang">₱0.00</div>
     </div>
+
     <div class="stat">
       <div class="muted">Total Bayad</div>
       <div class="num zero" id="totalBayad">₱0.00</div>
     </div>
+
+    <div class="stat">
+      <div class="muted">Customers</div>
+      <div class="num" id="totalCustomers">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="muted">May Utang</div>
+      <div class="num" id="customersWithDebt">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="muted">Fully Paid</div>
+      <div class="num" id="fullyPaid">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="muted">Today's Utang</div>
+      <div class="num" id="todayUtang">₱0.00</div>
+    </div>
+
+    <div class="stat">
+      <div class="muted">Today's Collection</div>
+      <div class="num" id="todayBayad">₱0.00</div>
+    </div>
+
   </div>
 </section>
 
@@ -801,32 +831,96 @@ function deleteTx(date){
 
 function renderDashboard(){
 
-  let utang=0;
-  let bayad=0;
+  let utang = 0;
+  let bayad = 0;
+  let customersWithDebt = 0;
+  let fullyPaid = 0;
+  let todayUtang = 0;
+  let todayBayad = 0;
 
-  txs.forEach(t=>{
+  const today = new Date().toISOString().slice(0,10);
 
-    if(t.type==='UTANG')
-      utang += Number(t.amount);
+  txs.forEach(t => {
 
-    if(t.type==='BAYAD')
-      bayad += Number(t.amount);
+    const amount = Number(t.amount) || 0;
+
+    if(t.type === 'UTANG'){
+      utang += amount;
+
+      if(t.date && t.date.slice(0,10) === today)
+        todayUtang += amount;
+    }
+
+    if(t.type === 'BAYAD'){
+      bayad += amount;
+
+      if(t.date && t.date.slice(0,10) === today)
+        todayBayad += amount;
+    }
 
   });
 
-  let outstanding = utang-bayad;
+  let outstanding = utang - bayad;
 
-  if(outstanding<0)
-    outstanding=0;
+  if(outstanding < 0)
+    outstanding = 0;
+
+  Object.values(people).forEach(p => {
+
+    let personUtang = 0;
+    let personBayad = 0;
+
+    txs.forEach(t => {
+
+      if(t.id === p.id){
+
+        if(t.type === 'UTANG')
+          personUtang += Number(t.amount) || 0;
+
+        if(t.type === 'BAYAD')
+          personBayad += Number(t.amount) || 0;
+
+      }
+
+    });
+
+    let balance = personUtang - personBayad;
+
+    if(balance > 0)
+      customersWithDebt++;
+    else
+      fullyPaid++;
+
+  });
 
   document.getElementById('totalUtang')
-    .textContent='₱'+utang.toFixed(2);
+    .textContent = '₱' + utang.toFixed(2);
 
   document.getElementById('totalBayad')
-    .textContent='₱'+bayad.toFixed(2);
+    .textContent = '₱' + bayad.toFixed(2);
 
   document.getElementById('totalOutstanding')
-    .textContent='₱'+outstanding.toFixed(2);
+    .textContent = '₱' + outstanding.toFixed(2);
+
+  const totalCustomers = Object.keys(people).length;
+
+  const el = id => document.getElementById(id);
+
+  if(el('totalCustomers'))
+    el('totalCustomers').textContent = totalCustomers;
+
+  if(el('customersWithDebt'))
+    el('customersWithDebt').textContent = customersWithDebt;
+
+  if(el('fullyPaid'))
+    el('fullyPaid').textContent = fullyPaid;
+
+  if(el('todayUtang'))
+    el('todayUtang').textContent = '₱' + todayUtang.toFixed(2);
+
+  if(el('todayBayad'))
+    el('todayBayad').textContent = '₱' + todayBayad.toFixed(2);
+
 }
 
 
