@@ -1255,8 +1255,28 @@ function esc(value){
 /* =========================
    CLEAR ALL
 ========================= */
+let ADMIN_PIN = localStorage.getItem('bfs_admin_pin');
 
+if (!ADMIN_PIN) {
+  ADMIN_PIN = prompt('Create your BFS Admin PIN:');
+
+  if (ADMIN_PIN) {
+    localStorage.setItem('bfs_admin_pin', ADMIN_PIN);
+  }
+}
+
+function adminCheck(){
+  const pin = prompt('Enter BFS Admin PIN:');
+
+  if (pin !== ADMIN_PIN) {
+    alert('Incorrect Admin PIN.');
+    return false;
+  }
+
+  return true;
+}
 function clearAll(){
+  if (!adminCheck()) return;
 
    if(!confirm(
      'Delete ALL BFS Pautang data? This cannot be undone.'
