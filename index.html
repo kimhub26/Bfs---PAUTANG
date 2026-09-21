@@ -1189,4 +1189,97 @@ function restoreData(event){
   const reader =
     new FileReader();
 
-  reader.onload=f
+     reader.onload = f => {
+     try {
+       const data = JSON.parse(f.target.result);
+
+       people = data.people || {};
+       txs = data.txs || [];
+
+       localStorage.setItem(
+         'bfs_people',
+         JSON.stringify(people)
+       );
+
+       localStorage.setItem(
+         'bfs_txs',
+         JSON.stringify(txs)
+       );
+
+       renderAll();
+
+       alert('Backup restored successfully.');
+
+     } catch(e) {
+       alert('Invalid backup file.');
+     }
+   };
+
+   reader.readAsText(file);
+}
+
+
+/* =========================
+   BALANCE AT DATE
+========================= */
+
+function balanceAt(id, date){
+   return txs
+     .filter(t => t.id === id && t.date <= date)
+     .reduce(
+       (sum,t) =>
+         sum + (
+           t.type === 'UTANG'
+             ? Number(t.amount)
+             : -Number(t.amount)
+         ),
+       0
+     );
+}
+
+
+/* =========================
+   ESCAPE TEXT
+========================= */
+
+function esc(value){
+   return String(value ?? '')
+     .replace(/&/g,'&amp;')
+     .replace(/</g,'&lt;')
+     .replace(/>/g,'&gt;')
+     .replace(/"/g,'&quot;')
+     .replace(/'/g,'&#039;');
+}
+
+
+/* =========================
+   CLEAR ALL
+========================= */
+
+function clearAll(){
+
+   if(!confirm(
+     'Delete ALL BFS Pautang data? This cannot be undone.'
+   )) return;
+
+   people = {};
+   txs = [];
+
+   localStorage.removeItem('bfs_people');
+   localStorage.removeItem('bfs_txs');
+
+   renderAll();
+
+   alert('All data cleared.');
+}
+
+
+/* =========================
+   START
+========================= */
+
+renderAll();
+
+</script>
+</body>
+</html>
