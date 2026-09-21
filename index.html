@@ -1488,5 +1488,21 @@ function clearAll(){
 renderAll();
 
 </script>
+  renderAll();
+
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('BFS Pautang offline mode ready'))
+      .catch(err => console.log('Offline setup error:', err));
+  });
+}
+</script>
+
+</body>
+</html>
 </body>
 </html>
