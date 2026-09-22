@@ -347,7 +347,40 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+async function loadFromSupabase(){
+  try {
+    const { data, error } = await supabaseClient
+      .from('bfs_data')
+      .select('data_type, data');
 
+    if (error) throw error;
+
+    for (const row of data || []) {
+      if (row.data_type === 'people') {
+        people = row.data || {};
+      }
+
+      if (row.data_type === 'txs') {
+        txs = row.data || [];
+      }
+    }
+
+    localStorage.setItem(
+      'bfs_people',
+      JSON.stringify(people)
+    );
+
+    localStorage.setItem(
+      'bfs_txs',
+      JSON.stringify(txs)
+    );
+
+    renderAll();
+
+  } catch (error) {
+    console.error('Supabase load failed:', error);
+  }
+}
 let people =
   JSON.parse(localStorage.getItem('bfs_people') || '{}');
 
@@ -1494,7 +1527,7 @@ function clearAll(){
 ========================= */
 
 renderAll();
-
+loadFromSupabase();
 </script>
   renderAll();
 
