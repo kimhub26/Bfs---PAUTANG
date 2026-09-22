@@ -440,7 +440,39 @@ async function loadFromSupabase(){
     renderAll();
   }
 }
+async function uploadRestoredData(){
 
+  try {
+
+    const { error } = await supabaseClient
+      .from('bfs_data')
+      .upsert([
+        {
+          data_type: 'people',
+          data: people,
+          updated_at: new Date().toISOString()
+        },
+        {
+          data_type: 'txs',
+          data: txs,
+          updated_at: new Date().toISOString()
+        }
+      ], {
+        onConflict: 'data_type'
+      });
+
+    if (error) throw error;
+
+    alert('BACKUP DATA UPLOADED TO SUPABASE ✅');
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert('UPLOAD FAILED ❌ Check console.');
+
+  }
+}
 /* =========================
    SAVE DATA
 ========================= */
