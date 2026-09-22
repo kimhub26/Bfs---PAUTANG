@@ -533,10 +533,18 @@ async function saveData(){
 
   } catch (error) {
 
-    console.error(
-      'Supabase sync failed:',
-      error
-    );
+  alert(
+    'SUPABASE SAVE ERROR\n\n' +
+    'Message: ' + (error.message || '') + '\n\n' +
+    'Code: ' + (error.code || '') + '\n\n' +
+    'Details: ' + (error.details || '') + '\n\n' +
+    'Hint: ' + (error.hint || '')
+  );
+
+  console.error(
+    'Supabase sync failed:',
+    error
+  );
 
   }
 }
