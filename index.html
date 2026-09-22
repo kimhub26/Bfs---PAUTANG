@@ -1711,6 +1711,58 @@ async function testSupabaseUpload(){
 
   alert('SUPABASE UPLOAD SUCCESS ✅');
 }
+  async function syncPendingData(){
+
+  if (!navigator.onLine) return;
+
+  if (
+    localStorage.getItem('bfs_pending_sync') !== 'yes'
+  ) {
+    return;
+  }
+
+  try {
+
+    const { error } = await supabaseClient
+      .from('bfs_data')
+      .upsert([
+        {
+          data_type: 'people',
+          data: people,
+          updated_at: new Date().toISOString()
+        },
+        {
+          data_type: 'txs',
+          data: txs,
+          updated_at: new Date().toISOString()
+        }
+      ], {
+        onConflict: 'data_type'
+      });
+
+    if (error) throw error;
+
+    localStorage.removeItem('bfs_pending_sync');
+
+    console.log('Offline data synced to Supabase ✅');
+
+  } catch (error) {
+
+    console.error(
+      'Offline sync failed:',
+      error
+    );
+
+  }
+}
+
+window.addEventListener('online', () => {
+
+  console.log('Internet connected. Syncing...');
+
+  syncPendingData();
+
+});
 /* =========================
    START
 ========================= */
