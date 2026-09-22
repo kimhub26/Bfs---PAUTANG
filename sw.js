@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bfs-pautang-v2';
+const CACHE_NAME = 'bfs-pautang-v3';
 
 const FILES_TO_CACHE = [
   './',
