@@ -508,6 +508,21 @@ async function saveData(){
 
   renderAll();
 
+  // KAPAG OFFLINE:
+  // Local lang muna ang save.
+  if (!navigator.onLine) {
+
+    localStorage.setItem(
+      'bfs_pending_sync',
+      'yes'
+    );
+
+    console.log('Offline: data saved locally ✅');
+
+    return;
+  }
+
+  // KAPAG ONLINE:
   try {
 
     const { error } = await supabaseClient
@@ -529,22 +544,23 @@ async function saveData(){
 
     if (error) throw error;
 
+    localStorage.removeItem('bfs_pending_sync');
+
     console.log('BFS data synced to Supabase ✅');
 
   } catch (error) {
 
-  alert(
-    'SUPABASE SAVE ERROR\n\n' +
-    'Message: ' + (error.message || '') + '\n\n' +
-    'Code: ' + (error.code || '') + '\n\n' +
-    'Details: ' + (error.details || '') + '\n\n' +
-    'Hint: ' + (error.hint || '')
-  );
+    // Kapag nagka-error kahit mukhang online,
+    // huwag mawala ang local data.
+    localStorage.setItem(
+      'bfs_pending_sync',
+      'yes'
+    );
 
-  console.error(
-    'Supabase sync failed:',
-    error
-  );
+    console.error(
+      'Supabase sync failed:',
+      error
+    );
 
   }
 }
