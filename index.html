@@ -461,18 +461,35 @@ async function uploadRestoredData(){
         onConflict: 'data_type'
       });
 
-    if (error) throw error;
+    if (error) {
+
+      alert(
+        'UPLOAD ERROR\n\n' +
+        'Message: ' + (error.message || '') + '\n\n' +
+        'Code: ' + (error.code || '') + '\n\n' +
+        'Details: ' + (error.details || '') + '\n\n' +
+        'Hint: ' + (error.hint || '')
+      );
+
+      console.error(error);
+
+      return;
+    }
 
     alert('BACKUP DATA UPLOADED TO SUPABASE ✅');
 
   } catch (error) {
 
-    console.error(error);
+    alert(
+      'JAVASCRIPT ERROR\n\n' +
+      (error.message || error)
+    );
 
-    alert('UPLOAD FAILED ❌ Check console.');
+    console.error(error);
 
   }
 }
+
 /* =========================
    SAVE DATA
 ========================= */
