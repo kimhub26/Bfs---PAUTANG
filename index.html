@@ -1653,13 +1653,47 @@ function clearAll(){
    alert('All data cleared.');
 }
 
+async function testSupabaseUpload(){
 
+  const { data, error } = await supabaseClient
+    .from('bfs_data')
+    .upsert([
+      {
+        data_type: 'people',
+        data: people,
+        updated_at: new Date().toISOString()
+      },
+      {
+        data_type: 'txs',
+        data: txs,
+        updated_at: new Date().toISOString()
+      }
+    ], {
+      onConflict: 'data_type'
+    });
+
+  if (error) {
+
+    alert(
+      'SUPABASE ERROR\n\n' +
+      'Message: ' + error.message + '\n' +
+      'Code: ' + error.code + '\n' +
+      'Details: ' + error.details + '\n' +
+      'Hint: ' + error.hint
+    );
+
+    return;
+  }
+
+  alert('SUPABASE UPLOAD SUCCESS ✅');
+}
 /* =========================
    START
 ========================= */
 
 renderAll();
 loadFromSupabase();
+testSupabaseUpload();
 </script>
   renderAll();
 
