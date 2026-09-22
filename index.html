@@ -395,7 +395,8 @@ let activeReader = null;
    SAVE DATA
 ========================= */
 
-function saveData(){
+async function saveData(){
+
   localStorage.setItem(
     'bfs_people',
     JSON.stringify(people)
@@ -407,6 +408,38 @@ function saveData(){
   );
 
   renderAll();
+
+  try {
+
+    const { error } = await supabaseClient
+      .from('bfs_data')
+      .upsert([
+        {
+          data_type: 'people',
+          data: people,
+          updated_at: new Date().toISOString()
+        },
+        {
+          data_type: 'txs',
+          data: txs,
+          updated_at: new Date().toISOString()
+        }
+      ], {
+        onConflict: 'data_type'
+      });
+
+    if (error) throw error;
+
+    console.log('BFS data synced to Supabase ✅');
+
+  } catch (error) {
+
+    console.error(
+      'Supabase sync failed:',
+      error
+    );
+
+  }
 }
 
 
