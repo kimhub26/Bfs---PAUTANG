@@ -31,12 +31,18 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
 
+  // Huwag i-cache ang Supabase/API requests
+  if (event.request.url.includes('supabase.co')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(cachedResponse => {
 
-        if(cachedResponse)
+        if (cachedResponse) {
           return cachedResponse;
+        }
 
         return fetch(event.request)
           .then(response => {
