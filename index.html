@@ -347,15 +347,64 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+
+let people =
+  JSON.parse(localStorage.getItem('bfs_people') || '{}');
+
+let txs =
+  JSON.parse(localStorage.getItem('bfs_txs') || '[]');
+
+let scanner = null;
+let activeReader = null;
 async function loadFromSupabase(){
+
   try {
+
     const { data, error } = await supabaseClient
       .from('bfs_data')
       .select('data_type, data');
 
     if (error) throw error;
 
-    for (const row of data || []) {
+    // Walang data sa Supabase
+    if (!data || data.length === 0) {
+
+      // Panatilihin ang existing local data
+      // at i-upload ito sa Supabase.
+      if (
+        Object.keys(people || {}).length > 0 ||
+        (txs || []).length > 0
+      ) {
+
+        const { error: syncError } = await supabaseClient
+          .from('bfs_data')
+          .upsert([
+            {
+              data_type: 'people',
+              data: people || {},
+              updated_at: new Date().toISOString()
+            },
+            {
+              data_type: 'txs',
+              data: txs || [],
+              updated_at: new Date().toISOString()
+            }
+          ], {
+            onConflict: 'data_type'
+          });
+
+        if (syncError) throw syncError;
+
+        console.log('Local data uploaded to Supabase ✅');
+      }
+
+      renderAll();
+      return;
+    }
+
+    // May data na sa Supabase
+    for (const row of data) {
+
       if (row.data_type === 'people') {
         people = row.data || {};
       }
@@ -363,6 +412,7 @@ async function loadFromSupabase(){
       if (row.data_type === 'txs') {
         txs = row.data || [];
       }
+
     }
 
     localStorage.setItem(
@@ -377,19 +427,19 @@ async function loadFromSupabase(){
 
     renderAll();
 
+    console.log('BFS data loaded from Supabase ✅');
+
   } catch (error) {
-    console.error('Supabase load failed:', error);
+
+    console.error(
+      'Supabase load failed:',
+      error
+    );
+
+    // Kapag offline/error, gamitin ang local data
+    renderAll();
   }
 }
-let people =
-  JSON.parse(localStorage.getItem('bfs_people') || '{}');
-
-let txs =
-  JSON.parse(localStorage.getItem('bfs_txs') || '[]');
-
-let scanner = null;
-let activeReader = null;
-
 
 /* =========================
    SAVE DATA
