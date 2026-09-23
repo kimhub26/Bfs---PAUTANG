@@ -1660,6 +1660,12 @@ async function clearAll(){
     'Delete ALL BFS Pautang data? This cannot be undone.'
   )) return;
 
+  // Mark that the user intentionally cleared everything
+  localStorage.setItem(
+    'bfs_data_cleared',
+    'yes'
+  );
+
   people = {};
   txs = [];
 
