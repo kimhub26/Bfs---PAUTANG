@@ -369,40 +369,32 @@ async function loadFromSupabase(){
     // Walang data sa Supabase
     if (!data || data.length === 0) {
 
-      // Panatilihin ang existing local data
-      // at i-upload ito sa Supabase.
+      // Kung may pending offline sync,
+      // huwag burahin ang local data.
       if (
-        Object.keys(people || {}).length > 0 ||
-        (txs || []).length > 0
+        localStorage.getItem('bfs_pending_sync') === 'yes'
       ) {
 
-        const { error: syncError } = await supabaseClient
-          .from('bfs_data')
-          .upsert([
-            {
-              data_type: 'people',
-              data: people || {},
-              updated_at: new Date().toISOString()
-            },
-            {
-              data_type: 'txs',
-              data: txs || [],
-              updated_at: new Date().toISOString()
-            }
-          ], {
-            onConflict: 'data_type'
-          });
-
-        if (syncError) throw syncError;
-
-        console.log('Local data uploaded to Supabase ✅');
+        renderAll();
+        return;
       }
 
+      // Kung walang pending sync at walang laman ang Supabase,
+      // panatilihing blank ang local data.
+      people = {};
+      txs = [];
+
+      localStorage.removeItem('bfs_people');
+      localStorage.removeItem('bfs_txs');
+
       renderAll();
+
+      console.log('Supabase is empty. Local data cleared.');
+
       return;
     }
 
-    // May data na sa Supabase
+    // May data sa Supabase
     for (const row of data) {
 
       if (row.data_type === 'people') {
@@ -440,6 +432,7 @@ async function loadFromSupabase(){
     renderAll();
   }
 }
+
 async function uploadRestoredData(){
 
   try {
