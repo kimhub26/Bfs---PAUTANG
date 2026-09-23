@@ -1659,22 +1659,47 @@ function adminCheck(){
 
   return true;
 }
-function clearAll(){
+async function clearAll(){
+
   if (!adminCheck()) return;
 
-   if(!confirm(
-     'Delete ALL BFS Pautang data? This cannot be undone.'
-   )) return;
+  if(!confirm(
+    'Delete ALL BFS Pautang data? This cannot be undone.'
+  )) return;
 
-   people = {};
-   txs = [];
+  people = {};
+  txs = [];
 
-   localStorage.removeItem('bfs_people');
-   localStorage.removeItem('bfs_txs');
+  localStorage.removeItem('bfs_people');
+  localStorage.removeItem('bfs_txs');
+  localStorage.removeItem('bfs_pending_sync');
 
-   renderAll();
+  renderAll();
 
-   alert('All data cleared.');
+  try {
+
+    const { error } = await supabaseClient
+      .from('bfs_data')
+      .delete()
+      .in('data_type', ['people', 'txs']);
+
+    if (error) throw error;
+
+    alert('All BFS Pautang data cleared successfully.');
+
+  } catch (error) {
+
+    alert(
+      'LOCAL DATA CLEARED\n\n' +
+      'Supabase data could not be cleared.\n\n' +
+      'Message: ' + (error.message || '')
+    );
+
+    console.error(
+      'Supabase clear failed:',
+      error
+    );
+  }
 }
 
 async function testSupabaseUpload(){
