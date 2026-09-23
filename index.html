@@ -1736,8 +1736,19 @@ async function testSupabaseUpload(){
   alert('SUPABASE UPLOAD SUCCESS ✅');
 }
   async function syncPendingData(){
+async function syncPendingData(){
 
   if (!navigator.onLine) return;
+
+  // Huwag nang i-upload ang lumang local data
+  // kung intentional na nag-Clear All ang user.
+  if (
+    localStorage.getItem('bfs_data_cleared') === 'yes'
+  ) {
+    console.log('Sync blocked: BFS data was cleared.');
+
+    return;
+  }
 
   if (
     localStorage.getItem('bfs_pending_sync') !== 'yes'
